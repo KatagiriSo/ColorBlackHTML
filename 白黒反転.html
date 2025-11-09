@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>HTML 白黒反転ツール</title>
+<style>
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background-color: black;
+  color: white;
+  font-family: "Helvetica Neue", sans-serif;
+}
+body {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+}
+h1 {
+  font-size: 2.2em;
+  font-weight: 800;
+  margin-bottom: 0.3em;
+}
+p {
+  font-size: 1.2em;
+  font-weight: 600;
+  margin-bottom: 1.5em;
+}
+#dropzone {
+  border: 4px dashed white;
+  border-radius: 25px;
+  color: white;
+  background: #111;
+  width: 80%;
+  max-width: 800px;
+  height: 300px;              /* ★ ドロップ領域を大きく */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 1.8em;
+  font-weight: 700;           /* ★ 太字 */
+  transition: background 0.3s, color 0.3s, transform 0.2s;
+}
+#dropzone.hover {
+  background: #333;
+  color: #00ffff;
+  transform: scale(1.03);     /* ★ 軽く拡大して反応を強調 */
+}
+a {
+  color: #00ffff;
+  font-weight: 700;
+}
+</style>
+</head>
+
+<body>
+<h1>HTML 白黒反転ツール</h1>
+<p>反転したいHTMLファイルをここにドラッグ＆ドロップ</p>
+<div id="dropzone">ここにドロップ</div>
+
+<script>
+const dropzone = document.getElementById('dropzone');
+
+dropzone.addEventListener('dragover', e => {
+  e.preventDefault();
+  dropzone.classList.add('hover');
+});
+
+dropzone.addEventListener('dragleave', () => {
+  dropzone.classList.remove('hover');
+});
+
+dropzone.addEventListener('drop', async e => {
+  e.preventDefault();
+  dropzone.classList.remove('hover');
+  const file = e.dataTransfer.files[0];
+  if (!file || !file.name.endsWith('.html')) {
+    alert('HTMLファイルをドロップしてください');
+    return;
+  }
+
+  const htmlText = await file.text();
+  const html = new DOMParser().parseFromString(htmlText, 'text/html');
+  const head = html.head || html.createElement('head');
+
+  // 白黒反転CSSを追加
+  const styleTag = `
+  <style>
+  body {
+    background-color: black !important;
+    color: white !important;
+  }
+  img, video {
+  }
+  </style>
+  `;
+  head.insertAdjacentHTML('beforeend', styleTag);
+  if (!html.head) html.documentElement.prepend(head);
+
+  const modified = '<!DOCTYPE html>\n' + html.documentElement.outerHTML;
+  const blob = new Blob([modified], { type: 'text/html' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = file.name.replace('.html', '_inverted.html');
+  a.click();
+});
+</script>
+</body>
+</html>
